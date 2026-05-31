@@ -51,6 +51,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         gstreamer1.0-plugins-base \
         gstreamer1.0-plugins-good \
         gstreamer1.0-plugins-bad \
+        gstreamer1.0-x \
+        libpango-1.0-0 \
+        libpangocairo-1.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /src/build/tools/mxl-gst/mxl-gst-testsrc /usr/bin/mxl-gst-testsrc
