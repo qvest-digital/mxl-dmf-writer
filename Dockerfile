@@ -53,7 +53,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         gstreamer1.0-plugins-bad \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /src/build/tools/mxl-gst/mxl-gst-testsrc /usr/local/bin/mxl-gst-testsrc
-COPY --from=build /src/build/tools/mxl-info/mxl-info       /usr/local/bin/mxl-info
+COPY --from=build /src/build/tools/mxl-gst/mxl-gst-testsrc /usr/bin/mxl-gst-testsrc
+COPY --from=build /src/build/tools/mxl-info/mxl-info       /usr/bin/mxl-info
 
-ENTRYPOINT ["/usr/local/bin/mxl-gst-testsrc"]
+# Flow definition template the producer script substitutes per-flow UUIDs
+# into before handing the rendered JSON to mxl-gst-testsrc -v. Path
+# matches the upstream jonasohland/mxl image so existing producer scripts
+# keep working without modification.
+RUN mkdir -p /home/mxl
+COPY --from=build /src/lib/tests/data/v210_flow.json  /home/mxl/v210_flow.json
+COPY --from=build /src/lib/tests/data/audio_flow.json /home/mxl/audio_flow.json
+
+ENTRYPOINT ["/usr/bin/mxl-gst-testsrc"]
