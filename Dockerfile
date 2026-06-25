@@ -28,7 +28,7 @@ ARG GO_MXL_TAG=1.0.0-rc.8
 # behind real time). Revert MXL_SRC back to dmf-mxl/mxl + MXL_REF=main
 # once the fix lands upstream.
 ARG MXL_SRC=https://github.com/qvest-digital/mxl-dmf-demo.git
-ARG MXL_REF=fix/writer-appsink-drop
+ARG MXL_REF=004e894664cf066cf6a52cf7580a7ba218295c89
 
 # ── Stage 1: build mxl-gst-testsrc against the canonical libmxl ─────────────
 FROM ghcr.io/qvest-digital/go-mxl-builder:${GO_MXL_TAG} AS build
