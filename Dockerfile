@@ -21,14 +21,22 @@ ARG GO_MXL_TAG=1.0.0-rc.8
 # Pin the dmf-mxl/mxl source commit. Bump in lockstep with the libmxl
 # the runtime stage ships (the commit go-mxl-runtime:${GO_MXL_TAG}
 # was built from). See README for how to find it.
-ARG MXL_REF=main
+#
+# HOTFIX: temporarily building from the qvest-digital/mxl-dmf-demo fork's
+# fix/writer-appsink-drop branch (= upstream main + the appsink
+# max-buffers/drop fix that stops the producer drifting tens of minutes
+# behind real time). Revert MXL_SRC back to dmf-mxl/mxl + MXL_REF=main
+# once the fix lands upstream.
+ARG MXL_SRC=https://github.com/qvest-digital/mxl-dmf-demo.git
+ARG MXL_REF=fix/writer-appsink-drop
 
 # ── Stage 1: build mxl-gst-testsrc against the canonical libmxl ─────────────
 FROM ghcr.io/qvest-digital/go-mxl-builder:${GO_MXL_TAG} AS build
 ARG MXL_REF
+ARG MXL_SRC
 
 WORKDIR /src
-RUN git clone --depth=1 https://github.com/dmf-mxl/mxl.git . && \
+RUN git clone --depth=1 "${MXL_SRC}" . && \
     git fetch --depth=1 origin "${MXL_REF}" && \
     git checkout FETCH_HEAD
 
