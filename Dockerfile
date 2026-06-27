@@ -71,13 +71,8 @@ COPY --from=build /src/build/tools/mxl-info/mxl-info       /usr/bin/mxl-info
 # into before handing the rendered JSON to mxl-gst-testsrc -v. Path
 # matches the upstream jonasohland/mxl image so existing producer scripts
 # keep working without modification.
-#
-# v210_flow.json is vendored here at 480x270 (not the upstream 1080p): the
-# multiviewer tiles are ~426x238, so producing at 1080p only to scale down
-# wasted producer CPU + fabric bandwidth and pinned a single writer pod below
-# all 9 flows. audio_flow.json still comes from the upstream test data.
 RUN mkdir -p /home/mxl
-COPY v210_flow.json                                   /home/mxl/v210_flow.json
+COPY --from=build /src/lib/tests/data/v210_flow.json  /home/mxl/v210_flow.json
 COPY --from=build /src/lib/tests/data/audio_flow.json /home/mxl/audio_flow.json
 
 ENTRYPOINT ["/usr/bin/mxl-gst-testsrc"]
