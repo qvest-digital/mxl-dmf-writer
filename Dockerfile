@@ -40,9 +40,13 @@ ARG MXL_REF
 ARG MXL_SRC
 
 WORKDIR /src
-RUN git clone --depth=1 "${MXL_SRC}" . && \
-    git fetch --depth=1 origin "${MXL_REF}" && \
-    git checkout FETCH_HEAD
+# Full clone, then checkout the pinned ref. A shallow `git fetch --depth=1
+# origin <SHA>` fails (exit 128) when the server doesn't allow fetching an
+# arbitrary commit by SHA (uploadpack.allowReachableSHA1InWant off) — which is
+# the GitHub default. A full clone has the commit in history, so checkout works
+# whether MXL_REF is a SHA, branch, or tag.
+RUN git clone "${MXL_SRC}" . && \
+    git checkout "${MXL_REF}"
 
 # go-mxl-builder ships vcpkg with stduuid + spdlog + fmt + libfabric
 # already provisioned; reuse its toolchain rather than re-fetching.
