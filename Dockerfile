@@ -22,13 +22,17 @@ ARG GO_MXL_TAG=1.0.0-rc.8
 # the runtime stage ships (the commit go-mxl-runtime:${GO_MXL_TAG}
 # was built from). See README for how to find it.
 #
-# HOTFIX: temporarily building from the qvest-digital/mxl-dmf-demo fork's
-# fix/writer-appsink-drop branch (= upstream main + the appsink
-# max-buffers/drop fix that stops the producer drifting tens of minutes
-# behind real time). Revert MXL_SRC back to dmf-mxl/mxl + MXL_REF=main
-# once the fix lands upstream.
+# HOTFIX: temporarily building from the qvest-digital/mxl-dmf-demo fork.
+# Stacks two producer fixes on top of upstream main:
+#   - fix/writer-appsink-drop: bounded drop=true appsink so the producer
+#     can't drift minutes behind real time.
+#   - fix/testsrc-i420-overlay-pacing (this ref): generate + overlay in
+#     I420 and convert to v210 once at the end. Overlaying on v210 was
+#     CPU-bound below the grain rate, so the appsink dropped ~50% of frames
+#     and libmxl backfilled the gaps -> jerky motion on every consumer.
+# Revert MXL_SRC back to dmf-mxl/mxl + MXL_REF=main once both land upstream.
 ARG MXL_SRC=https://github.com/qvest-digital/mxl-dmf-demo.git
-ARG MXL_REF=004e894664cf066cf6a52cf7580a7ba218295c89
+ARG MXL_REF=2c6347a
 
 # ── Stage 1: build mxl-gst-testsrc against the canonical libmxl ─────────────
 FROM ghcr.io/qvest-digital/go-mxl-builder:${GO_MXL_TAG} AS build
@@ -74,5 +78,12 @@ COPY --from=build /src/build/tools/mxl-info/mxl-info       /usr/bin/mxl-info
 RUN mkdir -p /home/mxl
 COPY --from=build /src/lib/tests/data/v210_flow.json  /home/mxl/v210_flow.json
 COPY --from=build /src/lib/tests/data/audio_flow.json /home/mxl/audio_flow.json
+
+# Default to 720p (1284x720, chroma 642x720) instead of the upstream 1080p:
+# ~44% the pixels -> the v210<->I420 overlay conversions (single-thread bound)
+# run well under one core, with zero grain backfill. Width is 1284, not 1280:
+# the v210 unpacker requires width divisible by 6 (1280 is not), and 1284 is
+# the nearest 16:9-ish width that is (and keeps even 4:2:2 chroma, 642).
+RUN sed -i 's/1920/1284/g; s/1080/720/g; s/960/642/g' /home/mxl/v210_flow.json
 
 ENTRYPOINT ["/usr/bin/mxl-gst-testsrc"]
