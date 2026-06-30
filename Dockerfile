@@ -32,7 +32,7 @@ ARG GO_MXL_TAG=1.0.0-rc.8
 #     and libmxl backfilled the gaps -> jerky motion on every consumer.
 # Revert MXL_SRC back to dmf-mxl/mxl + MXL_REF=main once both land upstream.
 ARG MXL_SRC=https://github.com/qvest-digital/mxl-dmf-demo.git
-ARG MXL_REF=b6dd1dc4ed77d4c860fce134ff9188adda26e8e6
+ARG MXL_REF=4d6c385
 
 # ── Stage 1: build mxl-gst-testsrc against the canonical libmxl ─────────────
 FROM ghcr.io/qvest-digital/go-mxl-builder:${GO_MXL_TAG} AS build
