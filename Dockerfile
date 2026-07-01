@@ -87,7 +87,9 @@ COPY --from=build /src/lib/tests/data/audio_flow.json /home/mxl/audio_flow.json
 # ~44% the pixels -> the v210<->I420 overlay conversions (single-thread bound)
 # run well under one core, with zero grain backfill. Width is 1284, not 1280:
 # the v210 unpacker requires width divisible by 6 (1280 is not), and 1284 is
-# the nearest 16:9-ish width that is (and keeps even 4:2:2 chroma, 642).
-RUN sed -i 's/1920/1284/g; s/1080/720/g; s/960/642/g' /home/mxl/v210_flow.json
+# a 16:9-ish width. 1296 (not 1284) is also divisible by 48, so the v210
+# row stride has no padding (packed == padded) — the GStreamer videoconvert in
+# the compositor rejects the padded case, showing empty (green) tiles.
+RUN sed -i 's/1920/1296/g; s/1080/720/g; s/960/648/g' /home/mxl/v210_flow.json
 
 ENTRYPOINT ["/usr/bin/mxl-gst-testsrc"]
