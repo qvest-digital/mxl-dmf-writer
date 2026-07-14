@@ -32,7 +32,10 @@ ARG GO_MXL_TAG=1.0.0-rc.8
 #     and libmxl backfilled the gaps -> jerky motion on every consumer.
 # Revert MXL_SRC back to dmf-mxl/mxl + MXL_REF=main once both land upstream.
 ARG MXL_SRC=https://github.com/qvest-digital/mxl-dmf-demo.git
-ARG MXL_REF=d6d2922
+# bumped to fix/testsrc-i420-overlay-pacing HEAD — now includes the DMF-398
+# stall watchdog (demo#21): producer crashes + restarts if GStreamer starves,
+# instead of going silently mute.
+ARG MXL_REF=1f18a3cab59f657d625fb9559edc944cfa199d27
 
 # ── Stage 1: build mxl-gst-testsrc against the canonical libmxl ─────────────
 FROM ghcr.io/qvest-digital/go-mxl-builder:${GO_MXL_TAG} AS build
