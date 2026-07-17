@@ -1,0 +1,22 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":semanticCommits"],
+  "minimumReleaseAge": "3 days",
+  "prHourlyLimit": 2,
+  "packageRules": [
+    {
+      "description": "go-mxl base image bumps land as deps commits",
+      "matchPackageNames": ["ghcr.io/qvest-digital/go-mxl-builder", "ghcr.io/qvest-digital/go-mxl-runtime"],
+      "semanticCommitType": "deps",
+      "semanticCommitScope": "writer"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Dockerfile ARG GO_MXL_TAG",
+      "managerFilePatterns": ["/^Dockerfile$/"],
+      "matchStrings": ["# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+ARG GO_MXL_TAG=(?<currentValue>\\S+)"]
+    }
+  ]
+}
