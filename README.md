@@ -38,7 +38,22 @@ docker build \
 `compositor/Dockerfile.mxlk8s`. Bumping the three together keeps the
 producer, gateway, and consumer on the same libmxl + libfabric.
 
-`MXL_REF` defaults to `main` of `dmf-mxl/mxl`. Pin to a commit for
-reproducible builds; bump in lockstep with whatever libmxl the
-runtime stage ships (the commit `go-mxl-runtime:${GO_MXL_TAG}` was
-built from).
+`MXL_REF` pins to a specific stock commit of `dmf-mxl/mxl` (currently
+`d3771a4`). Bump in lockstep with whatever libmxl the runtime stage
+ships (the commit `go-mxl-runtime:${GO_MXL_TAG}` was built from).
+
+## Producer-pacing patches
+
+The image builds stock `dmf-mxl/mxl` @ `MXL_REF` and then applies
+`patches/*.patch` on top. The 6 patches in the series are a deliberate,
+permanent qvest delta — they fix producer-pacing behaviour that is
+specific to this pipeline and are not upstreamed.
+
+To bump the stock base:
+1. Raise `MXL_REF` to the new commit.
+2. Re-apply the series: `git apply --3way patches/*.patch` (resolve any
+   conflicts against the new base).
+3. Re-test the pipeline end-to-end before shipping.
+
+`GO_MXL_TAG` must stay in lock-step with the gateway and compositor
+(see **Tag bump policy** above) — all three must link the same libmxl ABI.
