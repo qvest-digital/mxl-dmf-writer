@@ -1,0 +1,73 @@
+From 4d6c3852dbff0064d23c0e988a31466ac863a78c Mon Sep 17 00:00:00 2001
+From: Alexander Erben <a.erben@qvest-digital.com>
+Date: Tue, 30 Jun 2026 09:05:01 +0200
+Subject: [PATCH 4/6] fix(mxl-gst-testsrc): soft clamp + larger appsink buffer
+ (kill residual jitter)
+
+Two follow-ups to the I420 overlay change, for the residual stutter that
+remained after backfill dropped from ~50%/s to ~2/s:
+
+- Soft clamp: only resync the write index to wall-clock on GROSS lag
+  (>~1s / 30 grains), not every frame. The old per-frame clamp pinned the
+  index to the wall clock while the buffer content lagged by the pipeline
+  latency (overlays + convert + queue); that latency wobbles frame to
+  frame, so the content-vs-index offset wobbled and motion jittered even
+  with ~zero dropped frames. A steady small latency is fine for a
+  multiviewer; the I420 pipeline no longer drifts in steady state, so the
+  gross-lag guard is enough to prevent minutes-behind drift.
+
+- appsink max-buffers 3 -> 8: absorb transient pull-loop stalls (node CPU
+  contention) instead of dropping the oldest buffer and backfilling.
+
+Measured backfill: ~2/s -> ~0.4/s; burned-in motion is smooth and evenly
+paced over the cross-node RDMA mirror.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+---
+ tools/mxl-gst/testsrc.cpp | 26 ++++++++++++++++----------
+ 1 file changed, 16 insertions(+), 10 deletions(-)
+
+diff --git a/tools/mxl-gst/testsrc.cpp b/tools/mxl-gst/testsrc.cpp
+index 0ad88d3..0c947ea 100644
+--- a/tools/mxl-gst/testsrc.cpp
++++ b/tools/mxl-gst/testsrc.cpp
+@@ -389,7 +389,7 @@ namespace
+             auto const appSink = getAppSink();
+             ::g_object_set(G_OBJECT(appSink),
+                 "max-buffers",
+-                static_cast<guint>(3),
++                static_cast<guint>(8),
+                 "drop",
+                 TRUE,
+                 "caps",
+@@ -530,15 +530,21 @@ namespace
+                     auto const bufferTs = GST_BUFFER_PTS(pipelineSample.buffer()); // PTS was already converted to TAI time in the pull()
+                     auto gstGrainIndex = ::mxlTimestampToIndex(&gstPipeline.config().frameRate, bufferTs);
+ 
+-                    // Never let the write index lag wall-clock time. If this
+-                    // pipeline can't sustain the grain rate (contention across
+-                    // concurrent v210 flows), the buffer PTS — and hence the
+-                    // grain index — falls progressively behind real time, so a
+-                    // consumer reading at the live index gets minutes-old
+-                    // frames. Clamp to the live index; the gap up to it is
+-                    // emitted as invalid grains by the skip path below, and the
+-                    // freshest decoded buffer is committed at the live index.
+-                    if (auto const liveIndex = ::mxlGetCurrentIndex(&gstPipeline.config().frameRate); liveIndex > gstGrainIndex)
++                    // Resync to wall-clock only on GROSS lag. Clamping every
++                    // frame (whenever liveIndex > gstGrainIndex) pinned the
++                    // write index to the wall clock while the buffer content
++                    // lagged by the pipeline latency (overlays + convert +
++                    // queue). That latency wobbles frame-to-frame, so the
++                    // content-vs-index offset wobbled too and motion jittered
++                    // even with ~zero dropped frames. A steady small latency is
++                    // fine for a multiviewer; only resync if the producer falls
++                    // far enough behind (~1s) that consumers would see clearly
++                    // stale frames — which the I420 pipeline no longer does in
++                    // steady state. The gap on resync is still filled by the
++                    // invalid-grain skip path below.
++                    constexpr std::uint64_t kMaxLagGrains = 30; // ~1s at 30fps
++                    if (auto const liveIndex = ::mxlGetCurrentIndex(&gstPipeline.config().frameRate);
++                        liveIndex > gstGrainIndex + kMaxLagGrains)
+                     {
+                         gstGrainIndex = liveIndex;
+                     }

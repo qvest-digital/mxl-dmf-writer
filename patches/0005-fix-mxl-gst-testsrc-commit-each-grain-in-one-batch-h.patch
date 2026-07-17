@@ -1,0 +1,50 @@
+From 2c6347aa6484d2347229d9bb8ee3fa27b8c5fe6a Mon Sep 17 00:00:00 2001
+From: Alexander Erben <a.erben@qvest-digital.com>
+Date: Tue, 30 Jun 2026 09:28:55 +0200
+Subject: [PATCH 5/6] fix(mxl-gst-testsrc): commit each grain in one batch
+ (halve PTS jitter)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The commit loop honoured maxCommitBatchSizeHint and spread a grain's slice
+commits across half a frame period (sleepTimeBetweenBatches), so the grain
+became fully available at a smeared, uneven time. Consumers that read whole
+grains and timestamp on arrival (e.g. mediamtx) turned that into uneven
+output PTS — frame intervals of 8-79ms vs 33ms ideal (sd ~11ms) — i.e.
+visibly janky motion despite zero dropped/duplicate frames.
+
+Commit the whole grain in a single batch so it lands at once, at the grain
+instant. Measured output PTS jitter sd ~11ms -> ~6.6ms.
+
+Residual jitter is the consumer timestamping on arrival rather than from the
+grain index; fixing that fully is consumer-side (assign PTS = grain index
+time) and is tracked separately.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+---
+ tools/mxl-gst/testsrc.cpp | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/tools/mxl-gst/testsrc.cpp b/tools/mxl-gst/testsrc.cpp
+index 0c947ea..1e0f3e0 100644
+--- a/tools/mxl-gst/testsrc.cpp
++++ b/tools/mxl-gst/testsrc.cpp
+@@ -520,7 +520,16 @@ namespace
+ 
+             auto grainIndex = std::uint64_t{MXL_UNDEFINED_INDEX};
+ 
+-            auto slicesPerBatch = _configInfo.common.maxCommitBatchSizeHint;
++            // Commit each grain in ONE batch. The default honours
++            // maxCommitBatchSizeHint and spreads the slice commits across half
++            // a frame period (sleepTimeBetweenBatches), so a grain becomes
++            // fully available at a smeared, uneven time. Our consumers read
++            // whole grains, so that buys nothing and instead jitters each
++            // grain's availability by up to half a frame — which a consumer
++            // that timestamps on arrival turns into uneven output PTS (~±16ms),
++            // i.e. visibly janky motion even with zero dropped frames. One
++            // batch makes the whole grain land at once, at the grain instant.
++            auto slicesPerBatch = static_cast<std::uint16_t>(gstPipeline.config().frameHeight);
+             while (!g_exit_requested)
+             {
+                 auto const timeoutNs = (grainIndex != MXL_UNDEFINED_INDEX) ? ::mxlGetNsUntilIndex(grainIndex + 1, &gstPipeline.config().frameRate)

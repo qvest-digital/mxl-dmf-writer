@@ -1,0 +1,72 @@
+From 004e894664cf066cf6a52cf7580a7ba218295c89 Mon Sep 17 00:00:00 2001
+From: Alexander Erben <a.erben@qvest-digital.com>
+Date: Thu, 25 Jun 2026 10:53:21 +0200
+Subject: [PATCH 2/6] fix(mxl-gst-testsrc): keep producer pinned to wall-clock
+ under load
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The appsink bound alone wasn't enough: a pipeline that can't sustain
+the grain rate still back-pressures the live source (which throttles to
+the consumer rate) and the sequential grain index falls permanently
+behind real time, so consumers reading at the live index see frames
+minutes old.
+
+Two changes:
+- Make the pre-appsink queue leaky=downstream (max 2 buffers) so a slow
+  consumer drops old frames instead of throttling the live source —
+  the source keeps producing fresh frames.
+- Clamp the write index to mxlGetCurrentIndex(): if the buffer PTS has
+  fallen behind wall-clock, advance to the live index. The existing
+  skip path fills the gap with invalid grains and commits the freshest
+  buffer at the live index, so the head stays at real time.
+
+Together these bound the producer lag to ~live regardless of per-flow
+throughput; slow flows render at a lower fps but on current frames
+instead of drifting into minutes-old content.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+---
+ tools/mxl-gst/testsrc.cpp | 21 +++++++++++++++++++--
+ 1 file changed, 19 insertions(+), 2 deletions(-)
+
+diff --git a/tools/mxl-gst/testsrc.cpp b/tools/mxl-gst/testsrc.cpp
+index d543a7b..a0780c0 100644
+--- a/tools/mxl-gst/testsrc.cpp
++++ b/tools/mxl-gst/testsrc.cpp
+@@ -348,7 +348,11 @@ namespace
+                 "clockoverlay ! "
+                 "videoconvert ! "
+                 "videoscale ! "
+-                "queue ! "
++                // leaky=downstream: drop the oldest buffer when full instead
++                // of back-pressuring the live source. Without this a slow
++                // consumer makes the source throttle to the consumer rate and
++                // the producer falls permanently behind real time.
++                "queue leaky=downstream max-size-buffers=2 max-size-time=0 max-size-bytes=0 ! "
+                 "appsink name=appsink ",
+                 _config.pattern,
+                 _config.frameWidth,
+@@ -515,7 +519,20 @@ namespace
+                 if (auto const pipelineSample = gstPipeline.pull(timeoutNs); pipelineSample)
+                 {
+                     auto const bufferTs = GST_BUFFER_PTS(pipelineSample.buffer()); // PTS was already converted to TAI time in the pull()
+-                    auto const gstGrainIndex = ::mxlTimestampToIndex(&gstPipeline.config().frameRate, bufferTs);
++                    auto gstGrainIndex = ::mxlTimestampToIndex(&gstPipeline.config().frameRate, bufferTs);
++
++                    // Never let the write index lag wall-clock time. If this
++                    // pipeline can't sustain the grain rate (contention across
++                    // concurrent v210 flows), the buffer PTS — and hence the
++                    // grain index — falls progressively behind real time, so a
++                    // consumer reading at the live index gets minutes-old
++                    // frames. Clamp to the live index; the gap up to it is
++                    // emitted as invalid grains by the skip path below, and the
++                    // freshest decoded buffer is committed at the live index.
++                    if (auto const liveIndex = ::mxlGetCurrentIndex(&gstPipeline.config().frameRate); liveIndex > gstGrainIndex)
++                    {
++                        gstGrainIndex = liveIndex;
++                    }
+ 
+                     // First buffer, set the initial grain index
+                     if (grainIndex == MXL_UNDEFINED_INDEX)
