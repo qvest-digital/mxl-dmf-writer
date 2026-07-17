@@ -9,6 +9,7 @@
 # Tag bump policy: keep GO_MXL_TAG in sync with
 #   - mxl-k8s gateway's docker/gateway.Dockerfile ARG GO_MXL_TAG
 #   - mxl-dmf-demo-app compositor's compositor/Dockerfile.mxlk8s base
+# gateway and compositor ship the same go-mxl rc.9 tag; writer must match.
 #
 # Bumping MXL_REF rebuilds against a different dmf-mxl/mxl commit. The
 # repo defaults track the commit the gateway's libmxl was published
@@ -16,23 +17,18 @@
 # matches what's mmapped in the gateway container.
 
 # renovate: datasource=docker depName=ghcr.io/qvest-digital/go-mxl-builder
-ARG GO_MXL_TAG=1.0.0-rc.8
+ARG GO_MXL_TAG=1.0.0-rc.9
 
-# Pin the dmf-mxl/mxl source commit. Bump in lockstep with the libmxl
-# the runtime stage ships (the commit go-mxl-runtime:${GO_MXL_TAG}
-# was built from). See README for how to find it.
+# Producer-pacing delta: we build mxl-gst-testsrc from STOCK dmf-mxl/mxl plus a
+# small, in-repo patch series (patches/). These 6 patches (overlay-on-I420 +
+# wall-clock pacing + single-batch commit) are a deliberate, PERMANENT qvest
+# delta — by team decision they are NOT upstreamed. The delta is visible and
+# reviewable in patches/; nothing depends on the demo-fork anymore.
 #
-# HOTFIX: temporarily building from the qvest-digital/mxl-dmf-demo fork.
-# Stacks two producer fixes on top of upstream main:
-#   - fix/writer-appsink-drop: bounded drop=true appsink so the producer
-#     can't drift minutes behind real time.
-#   - fix/testsrc-i420-overlay-pacing (this ref): generate + overlay in
-#     I420 and convert to v210 once at the end. Overlaying on v210 was
-#     CPU-bound below the grain rate, so the appsink dropped ~50% of frames
-#     and libmxl backfilled the gaps -> jerky motion on every consumer.
-# Revert MXL_SRC back to dmf-mxl/mxl + MXL_REF=main once both land upstream.
-ARG MXL_SRC=https://github.com/qvest-digital/mxl-dmf-demo.git
-ARG MXL_REF=d6d2922
+# MXL_REF pins the stock commit the patches apply onto. Bump it (and re-run the
+# patch apply) in lock-step with the libmxl the runtime stage ships. See README.
+ARG MXL_SRC=https://github.com/dmf-mxl/mxl.git
+ARG MXL_REF=d3771a4
 
 # ── Stage 1: build mxl-gst-testsrc against the canonical libmxl ─────────────
 FROM ghcr.io/qvest-digital/go-mxl-builder:${GO_MXL_TAG} AS build
@@ -40,13 +36,15 @@ ARG MXL_REF
 ARG MXL_SRC
 
 WORKDIR /src
+COPY patches/ /patches/
 # Full clone, then checkout the pinned ref. A shallow `git fetch --depth=1
 # origin <SHA>` fails (exit 128) when the server doesn't allow fetching an
 # arbitrary commit by SHA (uploadpack.allowReachableSHA1InWant off) — which is
 # the GitHub default. A full clone has the commit in history, so checkout works
 # whether MXL_REF is a SHA, branch, or tag.
-RUN git clone "${MXL_SRC}" . && \
-    git checkout "${MXL_REF}"
+RUN git clone "${MXL_SRC}" . \
+ && git checkout "${MXL_REF}" \
+ && git apply /patches/*.patch
 
 # go-mxl-builder ships vcpkg with stduuid + spdlog + fmt + libfabric
 # already provisioned; reuse its toolchain rather than re-fetching.
