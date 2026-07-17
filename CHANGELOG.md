@@ -1,0 +1,34 @@
+# Changelog
+
+## [1.0.0-rc.1](https://github.com/qvest-digital/mxl-dmf-writer/compare/v1.0.0-rc.0...v1.0.0-rc.1) (2026-07-17)
+
+
+### Features
+
+* bump MXL_REF to d6d2922 (MXL_OVERLAY_FORMAT env) ([#3](https://github.com/qvest-digital/mxl-dmf-writer/issues/3)) ([a2ca7dc](https://github.com/qvest-digital/mxl-dmf-writer/commit/a2ca7dc2a8e65ee9aec6dedcaceb4c4949e6c19c))
+* initial mxl-dmf-writer image scaffold ([4bb1a8c](https://github.com/qvest-digital/mxl-dmf-writer/commit/4bb1a8c9a06b8ef66763975f4c887e0cbbc66b76))
+* produce showcase flows at 480x270, not 1080p ([db5fa14](https://github.com/qvest-digital/mxl-dmf-writer/commit/db5fa14c2a03bab5e5486bfa5cd6aea2c412cf33))
+
+
+### Bug Fixes
+
+* build writer from the I420-overlay pacing fix (kills ~50% backfill) ([#1](https://github.com/qvest-digital/mxl-dmf-writer/issues/1)) ([c91dc64](https://github.com/qvest-digital/mxl-dmf-writer/commit/c91dc64df3d29feb09e178520187482cad27fd41))
+* **build:** build testsrc from fork branch with appsink drift fix ([dad0136](https://github.com/qvest-digital/mxl-dmf-writer/commit/dad0136b8509c3dddce3137f135c174b8241d627))
+* **build:** pin MXL_REF to fork commit 004e894 (wall-clock producer fix) ([476db9b](https://github.com/qvest-digital/mxl-dmf-writer/commit/476db9b6d6df66a7991f687c86e8948620aefef7))
+* **ci:** full clone + checkout (shallow SHA fetch fails, exit 128) ([#2](https://github.com/qvest-digital/mxl-dmf-writer/issues/2)) ([8567416](https://github.com/qvest-digital/mxl-dmf-writer/commit/85674165d5ea94ff4f67fcd509584537d4a795a7))
+* **image:** add pango runtime libs + gstreamer1.0-x for textoverlay/clockoverlay ([180c873](https://github.com/qvest-digital/mxl-dmf-writer/commit/180c8734dfc39c9788655fa960a0b9fced5ac968))
+* **image:** install testsrc at /usr/bin + ship v210/audio flow JSON templates ([616ee4e](https://github.com/qvest-digital/mxl-dmf-writer/commit/616ee4e872b131fb94828c490ae91381ce1f04b8))
+* writer width 1296 (divisible by 48) instead of 1284 ([#4](https://github.com/qvest-digital/mxl-dmf-writer/issues/4)) ([e5cf194](https://github.com/qvest-digital/mxl-dmf-writer/commit/e5cf194066bf509a55409c367940206ff4b7024c))
+
+
+### Build System
+
+* build testsrc from stock dmf-mxl + patches/, lock-step go-mxl rc.9 ([058b3be](https://github.com/qvest-digital/mxl-dmf-writer/commit/058b3be5d3a6d033226d00139573d33b655354d7))
+* vendor the 6 producer-pacing patches (owned qvest delta, not upstreamed) ([d8ca3d5](https://github.com/qvest-digital/mxl-dmf-writer/commit/d8ca3d5f3250e5dd72112a2d32b0fa0bee0935e2))
+
+
+### Continuous Integration
+
+* add release-please (versioned rc tags on merge to main) ([6cf5a5b](https://github.com/qvest-digital/mxl-dmf-writer/commit/6cf5a5b9146c1c12be7c991b4db5daea9a425eb7))
+* publish a version-tagged writer image on release ([ea856f1](https://github.com/qvest-digital/mxl-dmf-writer/commit/ea856f1b9ef6acbf3832df925ed1d004f907a466))
+* **renovate:** track the go-mxl ARG via an inline marker ([db2255d](https://github.com/qvest-digital/mxl-dmf-writer/commit/db2255d5847cd9478686da16ef1227ad2090fc70))
