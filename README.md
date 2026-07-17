@@ -12,7 +12,7 @@ against a single libmxl ABI.
 
 `ghcr.io/qvest-digital/mxl-dmf-writer:<tag>`
 
-Tags follow `<git-sha>` and `latest`.
+Tags follow `<git-sha>` (every build), `latest` (main only), and `<version>` on release.
 
 ## Build locally
 
@@ -24,7 +24,7 @@ Override defaults with `--build-arg`:
 
 ```bash
 docker build \
-  --build-arg GO_MXL_TAG=1.0.0-rc.8 \
+  --build-arg GO_MXL_TAG=1.0.0-rc.9 \
   --build-arg MXL_REF=<commit> \
   -t mxl-dmf-writer:dev .
 ```
