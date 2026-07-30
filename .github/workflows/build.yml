@@ -1,7 +1,7 @@
 name: Build & Push writer image
 
-# Builds the mxl-dmf-writer image and pushes to GHCR. Same trigger
-# shape as mxl-dmf-demo-app's compositor build.
+# Builds the writer image and pushes to GHCR. Same trigger shape as
+# mxl-dmf-demo-app's compositor build.
 
 on:
   push:
@@ -18,7 +18,9 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE: ghcr.io/qvest-digital/mxl-dmf-writer
+  # GHCR cannot rename a package: ghcr.io/qvest-digital/mxl-dmf-writer keeps the
+  # tags it already holds and receives no further build.
+  IMAGE: ghcr.io/qvest-digital/dmf-mf-mxl-writer
 
 jobs:
   build-and-push:
