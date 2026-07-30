@@ -1,7 +1,7 @@
 name: Build & Push writer image
 
-# Builds the mxl-dmf-writer image and pushes to GHCR. Same trigger
-# shape as mxl-dmf-demo-app's compositor build.
+# Builds the writer image and pushes to GHCR. Same trigger shape as
+# mxl-dmf-demo-app's compositor build.
 
 on:
   push:
@@ -18,7 +18,10 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE: ghcr.io/qvest-digital/mxl-dmf-writer
+  IMAGE: ghcr.io/qvest-digital/dmf-mf-mxl-writer
+  # The name before this repository was renamed. GHCR cannot rename a package,
+  # so both are pushed until every consumer resolves the new one.
+  LEGACY_IMAGE: ghcr.io/qvest-digital/mxl-dmf-writer
 
 jobs:
   build-and-push:
@@ -58,5 +61,8 @@ jobs:
             ${{ env.IMAGE }}:${{ steps.tags.outputs.sha }}
             ${{ steps.tags.outputs.version && format('{0}:{1}', env.IMAGE, steps.tags.outputs.version) || '' }}
             ${{ github.ref == 'refs/heads/main' && format('{0}:latest', env.IMAGE) || '' }}
+            ${{ env.LEGACY_IMAGE }}:${{ steps.tags.outputs.sha }}
+            ${{ steps.tags.outputs.version && format('{0}:{1}', env.LEGACY_IMAGE, steps.tags.outputs.version) || '' }}
+            ${{ github.ref == 'refs/heads/main' && format('{0}:latest', env.LEGACY_IMAGE) || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

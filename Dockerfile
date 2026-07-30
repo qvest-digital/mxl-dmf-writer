@@ -1,4 +1,4 @@
-# mxl-dmf-writer: producer-side image for the mxl-k8s demo pipeline.
+# dmf-mf-mxl-writer: producer-side image for the mxl-k8s demo pipeline.
 #
 # Builds mxl-gst-testsrc (and supporting binaries) from dmf-mxl/mxl
 # source against the same go-mxl-builder/runtime pair the mxl-k8s

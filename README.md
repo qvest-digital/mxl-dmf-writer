@@ -1,4 +1,4 @@
-# mxl-dmf-writer
+# dmf-mf-mxl-writer
 
 Producer-side container image for the mxl-k8s demo pipeline.
 
@@ -10,14 +10,18 @@ against a single libmxl ABI.
 
 ## Image
 
-`ghcr.io/qvest-digital/mxl-dmf-writer:<tag>`
+`ghcr.io/qvest-digital/dmf-mf-mxl-writer:<tag>`
 
 Tags follow `<git-sha>` (every build), `latest` (main only), and `<version>` on release.
+
+`ghcr.io/qvest-digital/mxl-dmf-writer` carries the same tags, from the name this
+repository had before the rename, and stops being pushed once no consumer
+resolves it.
 
 ## Build locally
 
 ```bash
-docker build -t mxl-dmf-writer:dev .
+docker build -t dmf-mf-mxl-writer:dev .
 ```
 
 Override defaults with `--build-arg`:
@@ -26,7 +30,7 @@ Override defaults with `--build-arg`:
 docker build \
   --build-arg GO_MXL_TAG=1.0.0-rc.9 \
   --build-arg MXL_REF=<commit> \
-  -t mxl-dmf-writer:dev .
+  -t dmf-mf-mxl-writer:dev .
 ```
 
 ## Tag bump policy
