@@ -14,9 +14,9 @@ against a single libmxl ABI.
 
 Tags follow `<git-sha>` (every build), `latest` (main only), and `<version>` on release.
 
-`ghcr.io/qvest-digital/mxl-dmf-writer` carries the same tags, from the name this
-repository had before the rename, and stops being pushed once no consumer
-resolves it.
+`ghcr.io/qvest-digital/mxl-dmf-writer` is the name this repository had before the
+rename. It keeps the tags it already holds and receives no further build; it can
+go once nothing resolves it.
 
 ## Build locally
 
