@@ -1,0 +1,139 @@
+From daad24343909ff5a4f0e759a8967e1ebf94f4bb5 Mon Sep 17 00:00:00 2001
+From: Daniel Clasen <d.clasen@qvest-digital.com>
+Date: Fri, 31 Jul 2026 19:47:34 +0200
+Subject: [PATCH] feat(mxl-gst-testsrc): expose waveform, per-channel frequency
+ and level
+
+The audio pipeline hardcoded every tone: sine, (channel + 1) * 100 Hz,
+full scale. AudioPipelineConfig already carried a wave field, but it
+was set to sine at construction and never reached audiotestsrc, so the
+one knob the struct implied did not exist either.
+
+A tone the flow is meant to be judged by has to be describable: a
+consumer checking a level meter or a spectrum needs to know what it
+should see, and every channel differing only by a fixed multiple of
+100 Hz cannot express, say, a musical interval.
+
+--audio-freq takes one frequency per channel and leaves the channels
+beyond the list on the old progression, so an unset run keeps the tones
+it emits today.
+---
+ tools/mxl-gst/testsrc.cpp | 63 +++++++++++++++++++++++++++++++++++----
+ 1 file changed, 57 insertions(+), 6 deletions(-)
+
+diff --git a/tools/mxl-gst/testsrc.cpp b/tools/mxl-gst/testsrc.cpp
+index ebac987..1800771 100644
+--- a/tools/mxl-gst/testsrc.cpp
++++ b/tools/mxl-gst/testsrc.cpp
+@@ -10,6 +10,7 @@
+ #include <stdexcept>
+ #include <string>
+ #include <thread>
++#include <vector>
+ #include <glib.h>
+ #include <uuid.h>
+ #include <CLI/CLI.hpp>
+@@ -61,11 +62,28 @@ namespace
+         std::uint64_t wave{0};
+         std::int64_t offset{0};
+ 
++        /// Tone frequency per channel. Channels beyond the list keep the
++        /// (channel + 1) * 100 Hz progression.
++        std::vector<double> frequencies{};
++
++        /// Linear amplitude applied to every channel.
++        double volume{1.0};
++
++        [[nodiscard]]
++        double frequency(std::size_t channel) const
++        {
++            return (channel < frequencies.size()) ? frequencies[channel] : static_cast<double>((channel + 1U) * 100U);
++        }
++
+         [[nodiscard]]
+         std::string display() const
+         {
+-            return fmt::format(
+-                "sampleRate={} channelCount={}  samplesPerBatch={} wave={}", sampleRate.numerator, channelCount, samplesPerBatch, wave);
++            return fmt::format("sampleRate={} channelCount={}  samplesPerBatch={} wave={} volume={}",
++                sampleRate.numerator,
++                channelCount,
++                samplesPerBatch,
++                wave,
++                volume);
+         }
+     };
+ 
+@@ -113,6 +131,18 @@ namespace
+         {"violet-noise",   12}, // Violet noise
+     };
+ 
++    [[nodiscard]]
++    inline std::vector<std::string> wave_names()
++    {
++        auto names = std::vector<std::string>{};
++        names.reserve(wave_map.size());
++        for (auto const& [name, _] : wave_map)
++        {
++            names.push_back(name);
++        }
++        return names;
++    }
++
+     class GstreamerSampleRef
+     {
+     public:
+@@ -441,10 +471,12 @@ namespace
+             auto pipelineDesc = std::string{};
+             for (auto chan = std::size_t{0}; chan < config.channelCount; ++chan)
+             {
+-                auto const freq = (chan + 1U) * 100U;
+                 pipelineDesc += fmt::format(
+-                    "audiotestsrc is-live=true do-timestamp=true freq={} samplesperbuffer={} ! audio/x-raw,channels=1 ! queue ! m.sink_{} ",
+-                    freq,
++                    "audiotestsrc is-live=true do-timestamp=true wave={} freq={} volume={} samplesperbuffer={} ! audio/x-raw,channels=1 ! "
++                    "queue ! m.sink_{} ",
++                    config.wave,
++                    config.frequency(chan),
++                    config.volume,
+                     samplesPerBatch,
+                     chan);
+             }
+@@ -882,6 +914,23 @@ int main(int argc, char** argv)
+         "--audio-offset", audioOffset, "Audio sample offset in number of samples. Positive value means you are adding a delay (commit in the past).");
+     audioOffsetOpt->default_val(0);
+ 
++    auto audioWave = std::string{};
++    auto audioWaveOpt = app.add_option("--audio-wave", audioWave, "Waveform each channel's tone generator emits");
++    audioWaveOpt->default_val("sine");
++    audioWaveOpt->check(CLI::IsMember(wave_names()));
++
++    auto audioFrequencies = std::vector<double>{};
++    app.add_option("--audio-freq",
++        audioFrequencies,
++        "Tone frequency in Hz, one per channel. Channels beyond the list keep the (channel + 1) * 100 Hz progression.")
++        ->delimiter(',')
++        ->check(CLI::PositiveNumber);
++
++    auto audioVolume = double{};
++    auto audioVolumeOpt = app.add_option("--audio-volume", audioVolume, "Linear amplitude applied to every channel");
++    audioVolumeOpt->default_val(1.0);
++    audioVolumeOpt->check(CLI::Range(0.0, 1.0));
++
+     auto videoOffset = std::int64_t{};
+     auto videoOffsetOpt = app.add_option(
+         "--video-offset", videoOffset, "Video frame offset in number of frames. Positive value means you are adding a delay (commit in the past).");
+@@ -977,7 +1026,9 @@ int main(int argc, char** argv)
+                         .sampleRate = json_utils::getRational(flowNmos, "sample_rate"),
+                         .channelCount = static_cast<std::uint32_t>(json_utils::getField<double>(flowNmos, "channel_count")),
+                         .samplesPerBatch = mxlWriter.maxCommitBatchSizeHint(),
+-                        .wave = wave_map.at("sine"),
++                        .wave = wave_map.at(audioWave),
++                        .frequencies = audioFrequencies,
++                        .volume = audioVolume,
+                     };
+ 
+                     auto gstPipeline = AudioPipeline{gstConfig};
+-- 
+2.55.0
+
