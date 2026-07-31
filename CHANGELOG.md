@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.0-rc.3](https://github.com/qvest-digital/dmf-mf-mxl-writer/compare/v1.0.0-rc.2...v1.0.0-rc.3) (2026-07-31)
+
+
+### Features
+
+* **patches:** make the audio tone describable ([#9](https://github.com/qvest-digital/dmf-mf-mxl-writer/issues/9)) ([571e4b7](https://github.com/qvest-digital/dmf-mf-mxl-writer/commit/571e4b74f86487a9d470979e1607f88ab3b962bd))
+
 ## [1.0.0-rc.2](https://github.com/qvest-digital/dmf-mf-mxl-writer/compare/v1.0.0-rc.1...v1.0.0-rc.2) (2026-07-30)
 
 
