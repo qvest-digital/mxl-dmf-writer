@@ -20,9 +20,9 @@
 ARG GO_MXL_TAG=1.0.0-rc.9
 
 # Producer-pacing delta: we build mxl-gst-testsrc from STOCK dmf-mxl/mxl plus a
-# small, in-repo patch series (patches/). These 6 patches (overlay-on-I420 +
-# wall-clock pacing + single-batch commit) are a deliberate, PERMANENT qvest
-# delta — by team decision they are NOT upstreamed. The delta is visible and
+# small, in-repo patch series (patches/). These 7 patches (overlay-on-I420 +
+# wall-clock pacing + single-batch commit + audio tone knobs) are a deliberate,
+# PERMANENT qvest delta — by team decision they are NOT upstreamed. The delta is visible and
 # reviewable in patches/; nothing depends on the demo-fork anymore.
 #
 # MXL_REF pins the stock commit the patches apply onto. Bump it (and re-run the

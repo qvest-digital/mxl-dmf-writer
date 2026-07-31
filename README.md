@@ -49,9 +49,9 @@ ships (the commit `go-mxl-runtime:${GO_MXL_TAG}` was built from).
 ## Producer-pacing patches
 
 The image builds stock `dmf-mxl/mxl` @ `MXL_REF` and then applies
-`patches/*.patch` on top. The 6 patches in the series are a deliberate,
-permanent qvest delta — they fix producer-pacing behaviour that is
-specific to this pipeline and are not upstreamed.
+`patches/*.patch` on top. The 7 patches in the series are a deliberate,
+permanent qvest delta — six fix producer-pacing behaviour specific to this
+pipeline, the seventh makes the audio tone describable. None are upstreamed.
 
 To bump the stock base:
 1. Raise `MXL_REF` to the new commit.
