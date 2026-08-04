@@ -43,7 +43,7 @@ docker build \
 producer, gateway, and consumer on the same libmxl + libfabric.
 
 `MXL_REF` pins to a specific stock commit of `dmf-mxl/mxl` (currently
-`d3771a4`). Bump in lockstep with whatever libmxl the runtime stage
+`4a8a50e7`). Bump in lockstep with whatever libmxl the runtime stage
 ships (the commit `go-mxl-runtime:${GO_MXL_TAG}` was built from).
 
 ## Producer-pacing patches
