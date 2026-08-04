@@ -17,7 +17,7 @@
 # matches what's mmapped in the gateway container.
 
 # renovate: datasource=docker depName=ghcr.io/qvest-digital/go-mxl-builder
-ARG GO_MXL_TAG=1.0.0-rc.9
+ARG GO_MXL_TAG=1.0.0-rc.12
 
 # Producer-pacing delta: we build mxl-gst-testsrc from STOCK dmf-mxl/mxl plus a
 # small, in-repo patch series (patches/). These 7 patches (overlay-on-I420 +
@@ -28,7 +28,7 @@ ARG GO_MXL_TAG=1.0.0-rc.9
 # MXL_REF pins the stock commit the patches apply onto. Bump it (and re-run the
 # patch apply) in lock-step with the libmxl the runtime stage ships. See README.
 ARG MXL_SRC=https://github.com/dmf-mxl/mxl.git
-ARG MXL_REF=d3771a4
+ARG MXL_REF=4a8a50e7
 
 # ── Stage 1: build mxl-gst-testsrc against the canonical libmxl ─────────────
 FROM ghcr.io/qvest-digital/go-mxl-builder:${GO_MXL_TAG} AS build
