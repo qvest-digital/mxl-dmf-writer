@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.0-rc.4](https://github.com/qvest-digital/dmf-mf-mxl-writer/compare/v1.0.0-rc.3...v1.0.0-rc.4) (2026-08-04)
+
+
+### Dependencies
+
+* move onto go-mxl 1.0.0-rc.12 and libmxl main ([#11](https://github.com/qvest-digital/dmf-mf-mxl-writer/issues/11)) ([161bc86](https://github.com/qvest-digital/dmf-mf-mxl-writer/commit/161bc862358146c655224a3ada9e88bd97a63490))
+
 ## [1.0.0-rc.3](https://github.com/qvest-digital/dmf-mf-mxl-writer/compare/v1.0.0-rc.2...v1.0.0-rc.3) (2026-07-31)
 
 
